@@ -1,0 +1,162 @@
+1. Consultas que generen los fragmentos de Customer a partir del conjunto M
+PrCustomer = {
+P1: TerritoryId = 1
+P2: TerritoryId = 2
+P3: TerritoryId = 3
+P4: TerritoryId = 4
+P5: TerritoryId = 5
+P6: TerritoryId = 6
+P7: TerritoryId = 7
+P8: TerritoryId = 8
+P9: TerritoryId = 9
+P10: TerritoryId = 10
+}
+Las regiones para tomar en cuenta son:
+• North America (contiene los id de territorio del 1 al 6)
+• Europe (contiene los id de territorio 7, 8 y 10)
+• Pacific (contiene el id de territorio 9)
+MCustomer = {
+M1: P1 ^ P2 ^ P3 ^ P4 ^ P5 ^ P6 ^ not(P7) ^ not(P8) ^ not(P9) ^ not(P10)
+M2: not(P1) ^ not(P2) ^ not(P3) ^ not(P4) ^ not(P5) ^ not(P6) ^ P7 ^ P8 ^ not(P9) ^ P10
+M3: not(P1) ^ not(P2) ^ not(P3) ^ not(P4) ^ not(P5) ^ not(P6) ^ not(P7) ^ not(P8) ^ P9 ^ not(P10)
+M4: not(P1) ^ not(P2) ^ not(P3) ^ not(P4) ^ not(P5) ^ not(P6) ^ not(P7) ^ not(P8) ^ not(P9) ^ not(P10)
+}
+Consultas
+• Fragmento del predicado M1 (FC1)
+SELECT *
+FROM AdventureWorks2019.Sales.Customer
+WHERE TerritoryID BETWEEN 1 AND 6;
+• Fragmento del predicado M2 (FC2)
+SELECT *
+FROM AdventureWorks2019.Sales.Customer
+WHERE (TerritoryID = 7) OR (TerritoryID = 8) OR (TerritoryID = 10)
+• Fragmento del predicado M3 (FC3)
+SELECT *
+FROM AdventureWorks2019.Sales.Customer
+WHERE TerritoryID = 9;
+• Fragmento del predicado M4 (FC4)
+SELECT *
+FROM AdventureWorks2019.Sales.Customer
+WHERE TerritoryID NOT IN (SELECT TerritoryID 
+ FROM AdventureWorks2019.Sales.SalesTerritory
+ WHERE TerritoryID BETWEEN 1 AND 10);
+
+2. Consultas semijoin que generen los fragmentos de SalesOrderHeader y SalesOrderDetail a partir de la fragmentación horizontal 
+
+Primaria de Customer
+
+SalesOrderHeader
+
+• Fragmento 1 de SalesOrderHeader (semi join con FC1):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderHeader
+
+WHERE TerritoryID IN ( SELECT TerritoryID
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE TerritoryID BETWEEN 1 AND 6);
+
+Fragmento 2 de SalesOrderHeader (semi join con FC2):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderHeader
+
+WHERE TerritoryID IN ( SELECT TerritoryID 
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE (TerritoryID = 7)
+
+OR (TerritoryID = 8)
+
+OR (TerritoryID = 10));
+
+Fragmento 3 de SalesOrderHeader (semi join con FC3):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderHeader
+
+WHERE TerritoryID IN ( SELECT TerritoryID 
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE TerritoryID = 9);
+
+Fragmento 4 de SalesOrderHeader (semi join con FC4):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderHeader
+
+WHERE TerritoryID IN ( SELECT TerritoryID 
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE TerritoryID NOT IN ( SELECT TerritoryID 
+
+FROM AdventureWorks2019.Sales.SalesTerritory
+
+WHERE TerritoryID BETWEEN 1 AND 10));
+
+SalesOrderDetail
+
+• Fragmento 1 de SalesOrderDetail (semijoin con FC1):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderDetail
+
+WHERE SalesOrderID IN ( SELECT SalesOrderID
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE TerritoryID BETWEEN 1 AND 6);
+
+• Fragmento 2 de SalesOrderDetail (semijoin con FC2):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderDetail
+
+WHERE SalesOrderID IN ( SELECT SalesOrderID 
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE (TerritoryID = 7)
+
+OR (TerritoryID = 8)
+
+OR (TerritoryID = 10));
+
+• Fragmento 3 de SalesOrderDetail (semijoin con FC3):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderDetail
+
+WHERE SalesOrderID IN ( SELECT SalesOrderID 
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE TerritoryID = 9);
+
+• Fragmento 4 de SalesOrderDetail (semi join con FC4):
+
+SELECT *
+
+FROM AdventureWorks2019.Sales.SalesOrderDetail
+
+WHERE SalesOrderID IN ( SELECT SalesOrderID 
+
+FROM AdventureWorks2019.Sales.Customer
+
+WHERE TerritoryID NOT IN ( SELECT TerritoryID 
+
+FROM AdventureWorks2019.Sales.SalesTerritory
+
+WHERE TerritoryID BETWEEN 1 AND 10));
